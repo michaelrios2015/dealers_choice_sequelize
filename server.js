@@ -1,59 +1,67 @@
-const Sequelize = require('sequelize');
-const { STRING, UUID, UUIDV4 } = Sequelize;
-const conn = new Sequelize(process.env.Database_URL || 'postgres://postgres:JerryPine@localhost/country_club')
+const { conn, syncAndSeed, models: {Bicycle, Member, Booking  }} = require('./db');
+const express = require('express');
+//more confused by this than i should be
+const app = express();
 
 
-const Bicycle = conn.define('bicycle', {
-    name: {
-        type: STRING(20)
+app.get('/bikes', async(req, res, next)=> {
+    try {
+ 
+        res.send(await Bicycle.findAll());
+
+        
     }
+    catch(ex){
+        //seems to send error message to the website which is maybe why we use it here and
+        //console.log in other places
+        next(ex);
+
+    }
+
 });
 
-const Member = conn.define('member', {
-    id: {
-        type: UUID,
-        primaryKey: true,
-        defaultValue: UUIDV4
-    },
-    name: {
-        type: STRING(20)
+app.get('/members', async(req, res, next)=> {
+    try {
+ 
+         res.send(await Member.findAll({
+            include: [ //Member, Bicycle
+                //not needed for this but if you renamed foriegn key you need to let sequilize know 
+                {
+                   model: Member,
+                    //lets  postgres know you renamed a foriegn key so it can join properly
+                   as: 'sponsor'
+
+                }
+            ]
+        }));
+        
     }
+    catch(ex){
+        //seems to send error message to the website which is maybe why we use it here and
+        //console.log in other places
+        next(ex);
+
+    }
+
 });
 
-const Booking = conn.define('booking', {
-    start: {
-        type: STRING(20)
-    },
-    end: {
-        type: STRING(20)
+app.get('/bookings', async(req, res, next)=> {
+    try {
+ 
+ 
+        res.send(await Booking.findAll({
+            include: [ Member, Bicycle]}));
+        
     }
+    catch(ex){
+        //seems to send error message to the website which is maybe why we use it here and
+        //console.log in other places
+        next(ex);
+
+    }
+
 });
 
-Booking.belongsTo(Member);
-Booking.belongsTo(Bicycle);
-
-Member.hasMany(Booking);
-Member.hasMany(Bicycle);
-
-Member.belongsTo(Member, {as: 'sponsor'});
-
-const syncAndSeed = async()=>{
-    await conn.sync({ force: true});
-    const [dirt, uni, jumbo, steve, earl] = await Promise.all([
-        Bicycle.create({name: 'dirt'}),
-        Bicycle.create({name: 'uni'}),
-        Bicycle.create({name: 'jumbo'}),
-        Member.create({name: 'steve'}),
-        Member.create({name: 'earl'})
-
-    ]);
-
-    console.log('-------------------------');
-    console.log(steve.id);
-    steve.sponsorId = earl.id;
-    await steve.save();
-
-};
 
 const init = async()=> {
 
@@ -61,6 +69,10 @@ const init = async()=> {
         await conn.authenticate();
         console.log("autheniticated :)")
         syncAndSeed();
+        //dont actually know what a port is just a place a computer and send a recieve info??
+        const port = process.env.PORT || 3000;
+        //if it's not listening get does not work??
+        app.listen(port, ()=>console.log(`listening on port ${port}`));
     }
     catch(ex){
         console.log(ex);
