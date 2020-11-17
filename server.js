@@ -4,6 +4,9 @@ const express = require('express');
 //const { Where } = require('sequelize/types/lib/utils');
 //more confused by this than i should be
 const app = express();
+
+const nav = `<nav> <a href = '/'>bikes</a> <a href = '/members'>members</a> <a href = '/bookings'>bookings</a></nav>`;
+
 app.use(express.urlencoded({extended:false}));
 
 app.use(express.json());
@@ -22,6 +25,16 @@ app.post('/add_bike', async(req, res, next)=> {
 
 });
 
+app.get('/', (req, res, next)=>{
+
+    try {
+    res.redirect('/bikes');
+    }
+    catch(ex){
+        next(ex);
+    }   
+});
+
 
 app.get('/bikes', async(req, res, next)=> {
     try {
@@ -32,7 +45,8 @@ app.get('/bikes', async(req, res, next)=> {
                 <head>
                 </head>
                 <body>
-                    <h1>OUR BIKES</h1>
+                ${nav}    
+                <h1>OUR BIKES</h1>
                         <ul>
                             ${
                                 bicycle.map( bike =>`<li> ${bike.name} </li>`).join(' ')
@@ -102,6 +116,7 @@ app.get('/members', async(req, res, next)=> {
                 <head>
                 </head>
                 <body>
+                    ${nav}  
                     <h1>OUR MEMBERS</h1>
                         <ul>
                         ${
@@ -136,6 +151,7 @@ app.get('/bookings', async(req, res, next)=> {
             <head>
             </head>
             <body>
+                ${nav}  
                 <h1>BOOKINGS</h1>
                     <ul>
                         ${
